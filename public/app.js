@@ -81,6 +81,80 @@ async function connectWhatsApp() {
 
 window.connectWhatsApp = connectWhatsApp;
 
+async function loadGroups() {
+    const result = await apiCall('/whatsapp/groups');
+    const list = document.getElementById('groups-list');
+
+    if (result.success && result.data && result.data.length > 0) {
+        list.innerHTML = result.data.map(group => `
+            <div class="list-item">
+                <div>
+                    <strong>${group.name}</strong>
+                    <p class="muted">${group.id}</p>
+                </div>
+                <button onclick="copyGroupId('${group.id}')" class="btn btn-secondary">Copy ID</button>
+            </div>
+        `).join('');
+    } else {
+        list.innerHTML = '<p class="empty-state">Tidak ada grup. Pastikan bot sudah join grup WhatsApp.</p>';
+    }
+}
+
+window.loadGroups = loadGroups;
+
+function copyGroupId(groupId) {
+    navigator.clipboard.writeText(groupId).then(() => {
+        alert('Group ID copied: ' + groupId);
+    }).catch(() => {
+        document.getElementById('group-id').value = groupId;
+        document.getElementById('schedule-group-id').value = groupId;
+        alert('Group ID dimasukkan ke form.');
+    });
+}
+
+window.copyGroupId = copyGroupId;
+
+async function sendGroupMessage(event) {
+    event.preventDefault();
+    const groupId = document.getElementById('group-id').value;
+    const message = document.getElementById('group-message').value;
+    const mediaUrl = document.getElementById('group-media-url').value;
+    const caption = document.getElementById('group-caption').value;
+
+    const result = await apiCall('/whatsapp/send-group', {
+        method: 'POST',
+        body: JSON.stringify({ groupId, message, mediaUrl: mediaUrl || undefined, caption: caption || undefined }),
+    });
+
+    showResult('group-result', result, 'Pesan grup terkirim!', 'Gagal kirim:');
+    loadActivity();
+}
+
+window.sendGroupMessage = sendGroupMessage;
+
+async function scheduleGroupMessage(event) {
+    event.preventDefault();
+    const groupId = document.getElementById('schedule-group-id').value;
+    const message = document.getElementById('schedule-group-message').value;
+    const mediaUrl = document.getElementById('schedule-group-media-url').value;
+    const caption = document.getElementById('schedule-group-caption').value;
+    const scheduleAt = document.getElementById('schedule-group-time').value;
+
+    if (!scheduleAt) {
+        alert('Jadwalkan waktu harus diisi');
+        return;
+    }
+
+    const result = await apiCall('/whatsapp/schedule-group', {
+        method: 'POST',
+        body: JSON.stringify({ groupId, message, mediaUrl: mediaUrl || undefined, caption: caption || undefined, scheduleAt }),
+    });
+
+    showResult('schedule-group-result', result, 'Pesan grup berhasil dijadwalkan!', 'Gagal jadwalkan:');
+}
+
+window.scheduleGroupMessage = scheduleGroupMessage;
+
 async function checkStatus() {
     const result = await apiCall('/health');
     if (result.status === 'ok') {
@@ -472,8 +546,10 @@ function onTargetModeChange() {
     const mode = document.getElementById('campaign-target-mode').value;
     const tagGroup = document.getElementById('target-tag-group');
     const manualGroup = document.getElementById('manual-phones-group');
+    const groupIdsGroup = document.getElementById('group-ids-group');
     if (tagGroup) tagGroup.style.display = mode === 'tag' ? 'block' : 'none';
     if (manualGroup) manualGroup.style.display = mode === 'manual' ? 'block' : 'none';
+    if (groupIdsGroup) groupIdsGroup.style.display = mode === 'group' ? 'block' : 'none';
 }
 
 window.onTargetModeChange = onTargetModeChange;
@@ -499,6 +575,7 @@ async function createCampaign(event) {
     const targetMode = document.getElementById('campaign-target-mode').value;
     const targetTag = document.getElementById('campaign-target-tag').value;
     const manualPhonesText = document.getElementById('campaign-manual-phones').value;
+    const groupIdsText = document.getElementById('campaign-group-ids').value;
     const scheduleAt = document.getElementById('campaign-schedule').value;
     const mediaUrl = document.getElementById('campaign-media-url').value;
     const mediaType = document.getElementById('campaign-media-url') ? 'image' : 'image';
@@ -516,6 +593,7 @@ async function createCampaign(event) {
     }
 
     const manualPhones = targetMode === 'manual' ? manualPhonesText.split(',').map(p => p.trim()).filter(p => p) : [];
+    const groupIds = targetMode === 'group' ? groupIdsText.split(',').map(p => p.trim()).filter(p => p) : [];
 
     const result = await apiCall('/campaigns', {
         method: 'POST',
@@ -526,6 +604,7 @@ async function createCampaign(event) {
             targetMode,
             targetTag: targetMode === 'tag' ? targetTag : undefined,
             manualPhones: targetMode === 'manual' ? manualPhones : undefined,
+            groupIds: targetMode === 'group' ? groupIds : undefined,
             mediaUrl: type === 'media' ? mediaUrl : undefined,
             mediaType: type === 'media' ? mediaType : undefined,
             caption: type === 'media' ? caption : undefined,
@@ -550,7 +629,7 @@ async function loadCampaigns() {
             <div class="campaign-item">
                 <h4>${campaign.name}</h4>
                 <p>Tipe: <strong>${campaign.type === 'media' ? 'Gambar + Caption + Link' : 'Pesan Teks'}</strong></p>
-                <p>Target: <strong>${campaign.targetMode === 'all' ? 'Semua Kontak' : campaign.targetMode === 'tag' ? `Tag: ${campaign.targetTag}` : 'Manual'}</strong></p>
+                <p>Target: <strong>${campaign.targetMode === 'all' ? 'Semua Kontak' : campaign.targetMode === 'tag' ? `Tag: ${campaign.targetTag}` : campaign.targetMode === 'manual' ? 'Manual' : campaign.targetMode === 'group' ? `Grup: ${(campaign.groupIds || []).join(', ')}` : campaign.targetMode}</strong></p>
                 <p>Status: <strong>${campaign.status}</strong></p>
                 <p>Terkirim: ${campaign.sentCount} / ${campaign.totalContacts}</p>
                 <p>Dibuat: ${new Date(campaign.createdAt).toLocaleString('id-ID')}</p>

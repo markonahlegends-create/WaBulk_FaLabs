@@ -21,9 +21,10 @@ export interface Campaign {
   type: 'text' | 'media';
   templateId?: number;
   contactListIds: number[];
-  targetMode: 'all' | 'tag' | 'manual';
+  targetMode: 'all' | 'tag' | 'manual' | 'group';
   targetTag?: string;
   manualPhones?: string[];
+  groupIds?: string[];
   message?: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'document';

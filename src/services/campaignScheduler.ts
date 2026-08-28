@@ -55,59 +55,89 @@ export class CampaignScheduler {
       database.updateCampaignStatus(campaign.id!, 'running', { startedAt: new Date().toISOString() });
       logger.info({ campaignId: campaign.id }, 'Campaign started');
 
-      let contacts = [];
-      if (campaign.targetMode === 'tag' && campaign.targetTag) {
-        contacts = database.getContacts({ optedOut: false }).filter(c => c.tags.includes(campaign.targetTag!));
-      } else if (campaign.targetMode === 'manual' && campaign.manualPhones && campaign.manualPhones.length > 0) {
-        const manualPhones = [...new Set(campaign.manualPhones)];
-        const existingContacts = new Map(database.getContacts({}).map(c => [c.phone, c]));
-        contacts = manualPhones
-          .map(phone => {
-            const existing = existingContacts.get(phone);
-            if (existing) return existing;
-            return {
-              phone,
-              name: '',
-              tags: [],
-              optedIn: true,
-              optedOut: false,
-              messageCount: 0,
-              source: 'campaign',
-            };
-          })
-          .filter(c => !c.optedOut);
+      if (campaign.targetMode === 'group' && campaign.groupIds && campaign.groupIds.length > 0) {
+        const uniqueGroupIds = [...new Set(campaign.groupIds)];
+        campaign.totalContacts = uniqueGroupIds.length;
+        database.incrementCampaignCounts(campaign.id!, 0, 0);
+
+        for (const groupId of uniqueGroupIds) {
+          try {
+            if (campaign.type === 'media' && campaign.mediaUrl) {
+              await whatsAppService.sendGroupMessage(
+                groupId,
+                campaign.message || '',
+                campaign.mediaUrl,
+                campaign.caption
+              );
+            } else {
+              const message = this.getCampaignMessage(campaign);
+              await whatsAppService.sendGroupMessage(groupId, message);
+            }
+
+            database.incrementCampaignCounts(campaign.id!, 1, 0);
+            await this.delay(5000, 30000);
+          } catch (error) {
+            logger.error({ error, groupId }, 'Error sending campaign group message');
+            database.incrementCampaignCounts(campaign.id!, 0, 1);
+          }
+        }
       } else {
-        contacts = database.getContacts({ optedOut: false });
-      }
+        let contacts = [];
+        if (campaign.targetMode === 'tag' && campaign.targetTag) {
+          contacts = database.getContacts({ optedOut: false }).filter(c => c.tags.includes(campaign.targetTag!));
+        } else if (campaign.targetMode === 'manual' && campaign.manualPhones && campaign.manualPhones.length > 0) {
+          const manualPhones = [...new Set(campaign.manualPhones)];
+          const existingContacts = new Map(database.getContacts({}).map(c => [c.phone, c]));
+          contacts = manualPhones
+            .map(phone => {
+              const existing = existingContacts.get(phone);
+              if (existing) return existing;
+              return {
+                phone,
+                name: '',
+                tags: [],
+                optedIn: true,
+                optedOut: false,
+                messageCount: 0,
+                source: 'campaign',
+              };
+            })
+            .filter(c => !c.optedOut);
+        } else {
+          contacts = database.getContacts({ optedOut: false });
+        }
 
-      const uniquePhones = [...new Set(contacts.map(c => c.phone))];
-      campaign.totalContacts = uniquePhones.length;
-      database.incrementCampaignCounts(campaign.id!, 0, 0);
+        const uniquePhones = [...new Set(contacts.map(c => c.phone))];
+        campaign.totalContacts = uniquePhones.length;
+        database.incrementCampaignCounts(campaign.id!, 0, 0);
 
-      for (const phone of uniquePhones) {
-        try {
-          if (!rateLimiter.canSend(phone).allowed) {
-            logger.warn({ phone }, 'Rate limited, skipping');
-            continue;
+        for (const phone of uniquePhones) {
+          try {
+            if (!rateLimiter.canSend(phone).allowed) {
+              logger.warn({ phone }, 'Rate limited, skipping');
+              continue;
+            }
+
+            if (campaign.type === 'media' && campaign.mediaUrl) {
+              await whatsAppService.sendMediaUrl(
+                phone,
+                campaign.mediaUrl,
+                campaign.mediaType || 'image',
+                campaign.caption,
+                campaign.link
+              );
+            } else {
+              const message = this.getCampaignMessage(campaign);
+              const personalizedMessage = this.personalizeMessage(message, phone);
+              await whatsAppService.sendMessage(phone, personalizedMessage);
+            }
+
+            database.incrementCampaignCounts(campaign.id!, 1, 0);
+            await this.delay(5000, 30000);
+          } catch (error) {
+            logger.error({ error, phone }, 'Error sending campaign message');
+            database.incrementCampaignCounts(campaign.id!, 0, 1);
           }
-
-          if (campaign.type === 'media' && campaign.mediaUrl) {
-            await whatsAppService.sendMediaUrl(
-              phone,
-              campaign.mediaUrl,
-              campaign.mediaType || 'image',
-              campaign.caption,
-              campaign.link
-            );
-          } else {
-            const message = this.getCampaignMessage(campaign);
-            const personalizedMessage = this.personalizeMessage(message, phone);
-            await whatsAppService.sendMessage(phone, personalizedMessage);
-          }
-
-          await this.delay(5000, 30000);
-        } catch (error) {
-          logger.error({ error, phone }, 'Error sending campaign message');
         }
       }
 

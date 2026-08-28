@@ -17,6 +17,7 @@
         <nav class="nav-tabs">
             <button class="tab-btn active" onclick="showTab('dashboard', this)">Dashboard</button>
             <button class="tab-btn" onclick="showTab('send', this)">Kirim Pesan</button>
+            <button class="tab-btn" onclick="showTab('groups', this)">Kirim ke Grup</button>
             <button class="tab-btn" onclick="showTab('contacts', this)">Kontak</button>
             <button class="tab-btn" onclick="showTab('campaigns', this)">Kampanye</button>
             <button class="tab-btn" onclick="showTab('shopee', this)">Shopee</button>
@@ -150,6 +151,71 @@
             </div>
         </div>
 
+        <!-- Groups Tab -->
+        <div id="tab-groups" class="tab-content">
+            <div class="form-section">
+                <h2>Kirim Pesan ke Grup WhatsApp</h2>
+                <form onsubmit="sendGroupMessage(event)">
+                    <div class="form-group">
+                        <label for="group-id">Group ID:</label>
+                        <input type="text" id="group-id" placeholder="1234567890@g.us" required>
+                        <p class="help-text">Format: 1234567890@g.us. Klik "Ambil Daftar Grup" untuk melihat grup yang kamu join.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="group-message">Pesan:</label>
+                        <textarea id="group-message" rows="5" placeholder="Halo grup! Cek produk terbaru kami..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="group-media-url">URL Media (opsional):</label>
+                        <input type="url" id="group-media-url" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label for="group-caption">Caption (opsional):</label>
+                        <textarea id="group-caption" rows="2" placeholder="Caption untuk media..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Kirim ke Grup</button>
+                </form>
+
+                <div class="result" id="group-result"></div>
+            </div>
+
+            <div class="form-section">
+                <h2>Jadwalkan Pesan ke Grup</h2>
+                <form onsubmit="scheduleGroupMessage(event)">
+                    <div class="form-group">
+                        <label for="schedule-group-id">Group ID:</label>
+                        <input type="text" id="schedule-group-id" placeholder="1234567890@g.us" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule-group-message">Pesan:</label>
+                        <textarea id="schedule-group-message" rows="5" placeholder="Halo grup! Cek produk terbaru kami..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule-group-media-url">URL Media (opsional):</label>
+                        <input type="url" id="schedule-group-media-url" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule-group-caption">Caption (opsional):</label>
+                        <textarea id="schedule-group-caption" rows="2" placeholder="Caption untuk media..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule-group-time">Jadwalkan (WIB):</label>
+                        <input type="datetime-local" id="schedule-group-time" required>
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Jadwalkan Pesan</button>
+                </form>
+
+                <div class="result" id="schedule-group-result"></div>
+            </div>
+
+            <div class="list-section">
+                <h2>Daftar Grup <button onclick="loadGroups()" class="btn btn-secondary" style="margin-left: 10px;">Refresh</button></h2>
+                <div id="groups-list" class="list-container">
+                    <p class="empty-state">Belum ada grup. Klik "Refresh" untuk memuat daftar grup.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Contacts Tab -->
         <div id="tab-contacts" class="tab-content">
             <div class="form-section">
@@ -258,6 +324,7 @@
                             <option value="all">Semua Kontak</option>
                             <option value="tag">Berdasarkan Tag</option>
                             <option value="manual">Pilih Manual</option>
+                            <option value="group">Grup WhatsApp</option>
                         </select>
                     </div>
                     <div class="form-group" id="target-tag-group" style="display: none;">
@@ -269,6 +336,11 @@
                     <div class="form-group" id="manual-phones-group" style="display: none;">
                         <label for="campaign-manual-phones">Nomor WhatsApp (pisah koma):</label>
                         <textarea id="campaign-manual-phones" rows="3" placeholder="628123456789, 628987654321"></textarea>
+                    </div>
+                    <div class="form-group" id="group-ids-group" style="display: none;">
+                        <label for="campaign-group-ids">Group ID (pisah koma):</label>
+                        <textarea id="campaign-group-ids" rows="3" placeholder="1234567890@g.us, 0987654321@g.us"></textarea>
+                        <p class="help-text">Dapatkan Group ID dari tab "Kirim ke Grup".</p>
                     </div>
                     <div class="form-group">
                         <label for="campaign-schedule">Jadwalkan (opsional):</label>

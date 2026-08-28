@@ -19,6 +19,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(process.cwd(), 'public')));
 
+const scheduledGroupTasks = new Map<string, NodeJS.Timeout>();
+
 const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -149,6 +151,82 @@ app.post('/api/whatsapp/send-bulk', async (req: Request, res: Response) => {
     res.json({ success: true, results });
   } catch (error) {
     res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to send bulk messages' });
+  }
+});
+
+app.get('/api/whatsapp/groups', async (req: Request, res: Response) => {
+  try {
+    const groups = await whatsAppService.getGroups();
+    res.json({ success: true, data: groups });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to fetch groups' });
+  }
+});
+
+app.post('/api/whatsapp/send-group', async (req: Request, res: Response) => {
+  try {
+    const { groupId, message, mediaUrl, caption } = req.body;
+
+    if (!groupId || !message) {
+      return res.status(400).json({ success: false, error: 'Group ID and message are required' });
+    }
+
+    const validation = safetyService.validateMessageContent(message);
+    if (!validation.valid) {
+      return res.status(400).json({ success: false, warnings: validation.warnings, error: 'Message validation failed' });
+    }
+
+    const log = await whatsAppService.sendGroupMessage(groupId, message, mediaUrl, caption);
+
+    res.json({ success: true, data: log });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to send group message' });
+  }
+});
+
+app.post('/api/whatsapp/schedule-group', async (req: Request, res: Response) => {
+  try {
+    const { groupId, message, mediaUrl, caption, scheduleAt } = req.body;
+
+    if (!groupId || !message || !scheduleAt) {
+      return res.status(400).json({ success: false, error: 'Group ID, message, and schedule time are required' });
+    }
+
+    const validation = safetyService.validateMessageContent(message);
+    if (!validation.valid) {
+      return res.status(400).json({ success: false, warnings: validation.warnings, error: 'Message validation failed' });
+    }
+
+    const scheduleTime = new Date(scheduleAt);
+    if (isNaN(scheduleTime.getTime())) {
+      return res.status(400).json({ success: false, error: 'Invalid schedule time format' });
+    }
+
+    const now = new Date();
+    if (scheduleTime <= now) {
+      return res.status(400).json({ success: false, error: 'Schedule time must be in the future' });
+    }
+
+    const delayMs = scheduleTime.getTime() - now.getTime();
+    const taskId = `${groupId}-${Date.now()}`;
+
+    const timeout = setTimeout(async () => {
+      try {
+        await whatsAppService.sendGroupMessage(groupId, message, mediaUrl, caption);
+        logger.info({ groupId, scheduleAt }, 'Scheduled group message sent');
+      } catch (error) {
+        logger.error({ error, groupId }, 'Failed to send scheduled group message');
+      } finally {
+        scheduledGroupTasks.delete(taskId);
+      }
+    }, delayMs);
+
+    scheduledGroupTasks.set(taskId, timeout);
+    logger.info({ groupId, scheduleAt, taskId }, 'Group message scheduled');
+
+    res.json({ success: true, message: 'Group message scheduled', data: { taskId, groupId, scheduleAt } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to schedule group message' });
   }
 });
 
@@ -313,6 +391,7 @@ app.post('/api/campaigns', (req: Request, res: Response) => {
       targetMode,
       targetTag,
       manualPhones,
+      groupIds,
       message,
       mediaUrl,
       mediaType,
@@ -329,6 +408,10 @@ app.post('/api/campaigns', (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Pilih minimal satu kontak atau gunakan mode target lain' });
     }
 
+    if (targetMode === 'group' && (!groupIds || groupIds.length === 0)) {
+      return res.status(400).json({ success: false, error: 'Pilih minimal satu grup atau gunakan mode target lain' });
+    }
+
     const campaign = database.createCampaign({
       name,
       status: 'draft',
@@ -338,6 +421,7 @@ app.post('/api/campaigns', (req: Request, res: Response) => {
       targetMode: targetMode || 'all',
       targetTag,
       manualPhones,
+      groupIds,
       message,
       mediaUrl,
       mediaType: mediaType || 'image',

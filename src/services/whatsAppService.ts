@@ -311,6 +311,78 @@ export class WhatsAppService {
     }
   }
 
+  async getGroups(): Promise<{ id: string; name: string }[]> {
+    if (!sock) {
+      throw new Error('WhatsApp not connected');
+    }
+
+    try {
+      const result = await sock.groupFetchAllParticipating();
+      const groups = Object.values(result).map((group: any) => ({
+        id: group.id,
+        name: group.subject || 'Unnamed Group',
+      }));
+
+      logger.info({ count: groups.length }, 'Groups fetched');
+      return groups;
+    } catch (error) {
+      logger.error({ error }, 'Failed to fetch groups');
+      throw error;
+    }
+  }
+
+  async sendGroupMessage(groupId: string, message: string, mediaUrl?: string, caption?: string): Promise<MessageLog> {
+    if (!sock) {
+      throw new Error('WhatsApp not connected');
+    }
+
+    const normalizedGroupId = this.normalizeGroupJid(groupId);
+
+    try {
+      let result: any;
+      if (mediaUrl) {
+        const response = await axios.get(mediaUrl, { responseType: 'arraybuffer', timeout: 30000 });
+        const buffer = Buffer.from(response.data);
+        const isImage = mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)/i);
+        const messageType = isImage ? 'image' : 'document';
+
+        result = await sock.sendMessage(normalizedGroupId, {
+          [messageType]: buffer,
+          caption: caption || message,
+          fileName: 'file',
+          mimetype: isImage ? 'image/jpeg' : 'application/octet-stream',
+        });
+      } else {
+        result = await sock.sendMessage(normalizedGroupId, { text: message });
+      }
+
+      const log = database.createMessageLog({
+        phone: normalizedGroupId,
+        direction: 'outbound',
+        status: 'sent',
+        content: caption || message,
+        sentAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      });
+
+      logger.info({ groupId: normalizedGroupId, messageId: result?.key?.id }, 'Group message sent');
+      return log;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const log = database.createMessageLog({
+        phone: normalizedGroupId,
+        direction: 'outbound',
+        status: 'failed',
+        errorMessage,
+        content: caption || message,
+        createdAt: new Date().toISOString(),
+      });
+
+      logger.error({ error, groupId: normalizedGroupId }, 'Failed to send group message');
+      return log;
+    }
+  }
+
   onMessage(callback: (message: any) => Promise<void>): void {
     this.onMessageCallback = callback;
   }
@@ -336,6 +408,18 @@ export class WhatsAppService {
 
     if (!normalized.endsWith('@s.whatsapp.net')) {
       normalized = `${normalized}@s.whatsapp.net`;
+    }
+
+    return normalized;
+  }
+
+  private normalizeGroupJid(groupId: string): string {
+    let normalized = groupId.trim();
+
+    if (!normalized.includes('@')) {
+      normalized = `${normalized}@g.us`;
+    } else if (!normalized.endsWith('@g.us')) {
+      normalized = normalized.replace(/@.*$/, '@g.us');
     }
 
     return normalized;
