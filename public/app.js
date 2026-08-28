@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = '';
 const AUTH_TOKEN = 'change_me_in_production';
 
 function showTab(tabName, btnElement) {
