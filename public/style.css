@@ -608,6 +608,16 @@ header h1 {
     margin-top: 5px;
 }
 
+.credit-link {
+    color: white;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.credit-link:hover {
+    opacity: 0.9;
+}
+
 .qr-modal {
     position: fixed;
     top: 0;
