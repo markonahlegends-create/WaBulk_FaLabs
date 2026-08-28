@@ -19,21 +19,23 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-const authenticate = (req: Request, res: Response, next: NextFunction) => {
+const authenticate = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
   }
 
   const token = authHeader.substring(7);
   if (token !== environment.security.jwtSecret || environment.security.jwtSecret === 'change_me_in_production') {
-    return res.status(401).json({ error: 'Invalid token' });
+    res.status(401).json({ error: 'Invalid token' });
+    return;
   }
 
   next();
 };
 
-app.get('/api/health', (req: Request, res: Response) => {
+app.get('/api/health', (req: Request, res: Response): void => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -43,7 +45,7 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
-app.get('/api/whatsapp/status', (req: Request, res: Response) => {
+app.get('/api/whatsapp/status', (req: Request, res: Response): void => {
   const session = whatsAppService.getSessionInfo();
   res.json({
     connected: whatsAppService.isConnected(),
@@ -51,7 +53,7 @@ app.get('/api/whatsapp/status', (req: Request, res: Response) => {
   });
 });
 
-app.get('/api/whatsapp/qr', (req: Request, res: Response) => {
+app.get('/api/whatsapp/qr', (req: Request, res: Response): void => {
   const session = whatsAppService.getSessionInfo();
   if (session?.qrCode) {
     res.json({ qr: session.qrCode });
@@ -60,7 +62,7 @@ app.get('/api/whatsapp/qr', (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/whatsapp/connect', async (req: Request, res: Response) => {
+app.post('/api/whatsapp/connect', async (req: Request, res: Response): Promise<void> => {
   try {
     await whatsAppService.connect();
     res.json({ success: true, message: 'Connecting to WhatsApp...' });
@@ -69,21 +71,24 @@ app.post('/api/whatsapp/connect', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/whatsapp/send', async (req: Request, res: Response) => {
+app.post('/api/whatsapp/send', async (req: Request, res: Response): Promise<void> => {
   try {
     const { phone, message } = req.body;
 
     if (!phone || !message) {
-      return res.status(400).json({ success: false, error: 'Phone and message are required' });
+      res.status(400).json({ success: false, error: 'Phone and message are required' });
+      return;
     }
 
     if (!safetyService.validatePhoneNumber(phone)) {
-      return res.status(400).json({ success: false, error: 'Invalid phone number format' });
+      res.status(400).json({ success: false, error: 'Invalid phone number format' });
+      return;
     }
 
     const validation = safetyService.validateMessageContent(message);
     if (!validation.valid) {
-      return res.status(400).json({ success: false, warnings: validation.warnings, error: 'Message validation failed' });
+      res.status(400).json({ success: false, warnings: validation.warnings, error: 'Message validation failed' });
+      return;
     }
 
     const normalizedPhone = safetyService.normalizePhone(phone);
@@ -95,16 +100,18 @@ app.post('/api/whatsapp/send', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/whatsapp/send-media', async (req: Request, res: Response) => {
+app.post('/api/whatsapp/send-media', async (req: Request, res: Response): Promise<void> => {
   try {
     const { phone, mediaUrl, mediaType, caption, link } = req.body;
 
     if (!phone || !mediaUrl) {
-      return res.status(400).json({ success: false, error: 'Phone and media URL are required' });
+      res.status(400).json({ success: false, error: 'Phone and media URL are required' });
+      return;
     }
 
     if (!safetyService.validatePhoneNumber(phone)) {
-      return res.status(400).json({ success: false, error: 'Invalid phone number format' });
+      res.status(400).json({ success: false, error: 'Invalid phone number format' });
+      return;
     }
 
     const normalizedPhone = safetyService.normalizePhone(phone);
@@ -116,21 +123,24 @@ app.post('/api/whatsapp/send-media', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/whatsapp/send-bulk', async (req: Request, res: Response) => {
+app.post('/api/whatsapp/send-bulk', async (req: Request, res: Response): Promise<void> => {
   try {
     const { phones, message, templateId } = req.body;
 
     if (!phones || !Array.isArray(phones) || phones.length === 0) {
-      return res.status(400).json({ success: false, error: 'Phones array is required' });
+      res.status(400).json({ success: false, error: 'Phones array is required' });
+      return;
     }
 
     if (phones.length > 100) {
-      return res.status(400).json({ success: false, error: 'Maximum 100 phones per request' });
+      res.status(400).json({ success: false, error: 'Maximum 100 phones per request' });
+      return;
     }
 
     const validation = safetyService.validateMessageContent(message);
     if (!validation.valid) {
-      return res.status(400).json({ success: false, warnings: validation.warnings });
+      res.status(400).json({ success: false, warnings: validation.warnings });
+      return;
     }
 
     const results = { success: 0, failed: 0, errors: [] as any[] };
@@ -152,7 +162,7 @@ app.post('/api/whatsapp/send-bulk', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/contacts', (req: Request, res: Response) => {
+app.get('/api/contacts', (req: Request, res: Response): void => {
   try {
     const { optedIn, optedOut, tags } = req.query;
     const contacts = database.getContacts({
@@ -166,12 +176,13 @@ app.get('/api/contacts', (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/contacts', (req: Request, res: Response) => {
+app.post('/api/contacts', (req: Request, res: Response): void => {
   try {
     const { phone, name, source, tags } = req.body;
 
     if (!phone) {
-      return res.status(400).json({ success: false, error: 'Phone is required' });
+      res.status(400).json({ success: false, error: 'Phone is required' });
+      return;
     }
 
     const normalizedPhone = safetyService.normalizePhone(phone);
@@ -195,7 +206,7 @@ app.post('/api/contacts', (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/contacts/export', (req: Request, res: Response) => {
+app.get('/api/contacts/export', (req: Request, res: Response): void => {
   try {
     const format = req.query.format === 'csv' ? 'csv' : 'json';
     const contacts = database.getContacts();
@@ -213,12 +224,13 @@ app.get('/api/contacts/export', (req: Request, res: Response) => {
         c.optedOut ? 'Ya' : 'Tidak',
         c.messageCount || 0,
         c.createdAt || ''
-      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+      ].map(v => `"${String(v).replace(/\"/g, '""')}"`).join(','));
 
       const csv = BOM + headers + rows.join('\n');
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', 'attachment; filename="contacts.csv"');
-      return res.send(csv);
+      res.send(csv);
+      return;
     }
 
     res.setHeader('Content-Type', 'application/json');
@@ -229,12 +241,13 @@ app.get('/api/contacts/export', (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/contacts/import', (req: Request, res: Response) => {
+app.post('/api/contacts/import', (req: Request, res: Response): void => {
   try {
     const { contacts, format } = req.body;
 
     if (!contacts || !Array.isArray(contacts)) {
-      return res.status(400).json({ success: false, error: 'Contacts array is required' });
+      res.status(400).json({ success: false, error: 'Contacts array is required' });
+      return;
     }
 
     const results = { success: 0, failed: 0, errors: [] as any[] };
@@ -274,12 +287,13 @@ app.post('/api/contacts/import', (req: Request, res: Response) => {
   }
 });
 
-app.delete('/api/contacts/:id', (req: Request, res: Response) => {
+app.delete('/api/contacts/:id', (req: Request, res: Response): void => {
   try {
     const id = parseInt(req.params.id, 10);
     const contact = database.getContactById(id);
     if (!contact) {
-      return res.status(404).json({ success: false, error: 'Contact not found' });
+      res.status(404).json({ success: false, error: 'Contact not found' });
+      return;
     }
 
     const deleted = database.deleteContact(id);
@@ -293,7 +307,7 @@ app.delete('/api/contacts/:id', (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/campaigns', (req: Request, res: Response) => {
+app.get('/api/campaigns', (req: Request, res: Response): void => {
   try {
     const { status } = req.query;
     const campaigns = database.getCampaigns(status ? { status: String(status) } : undefined);
@@ -303,7 +317,7 @@ app.get('/api/campaigns', (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/campaigns', (req: Request, res: Response) => {
+app.post('/api/campaigns', (req: Request, res: Response): void => {
   try {
     const {
       name,
@@ -322,11 +336,13 @@ app.post('/api/campaigns', (req: Request, res: Response) => {
     } = req.body;
 
     if (!name) {
-      return res.status(400).json({ success: false, error: 'Nama kampanye wajib diisi' });
+      res.status(400).json({ success: false, error: 'Nama kampanye wajib diisi' });
+      return;
     }
 
     if (targetMode === 'manual' && (!manualPhones || manualPhones.length === 0)) {
-      return res.status(400).json({ success: false, error: 'Pilih minimal satu kontak atau gunakan mode target lain' });
+      res.status(400).json({ success: false, error: 'Pilih minimal satu kontak atau gunakan mode target lain' });
+      return;
     }
 
     const campaign = database.createCampaign({
@@ -357,11 +373,12 @@ app.post('/api/campaigns', (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/campaigns/:id/start', (req: Request, res: Response) => {
+app.post('/api/campaigns/:id/start', (req: Request, res: Response): void => {
   try {
     const campaign = database.getCampaign(parseInt(req.params.id, 10));
     if (!campaign) {
-      return res.status(404).json({ success: false, error: 'Campaign not found' });
+      res.status(404).json({ success: false, error: 'Campaign not found' });
+      return;
     }
 
     campaignScheduler.startCampaign(campaign);
@@ -371,7 +388,7 @@ app.post('/api/campaigns/:id/start', (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/campaigns/:id/stop', (req: Request, res: Response) => {
+app.post('/api/campaigns/:id/stop', (req: Request, res: Response): void => {
   try {
     campaignScheduler.stopCampaign(parseInt(req.params.id, 10));
     res.json({ success: true, message: 'Campaign stopped' });
@@ -380,7 +397,7 @@ app.post('/api/campaigns/:id/stop', (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/templates', (req: Request, res: Response) => {
+app.get('/api/templates', (req: Request, res: Response): void => {
   try {
     const templates = database.getTemplates();
     res.json({ success: true, data: templates });
@@ -389,17 +406,19 @@ app.get('/api/templates', (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/templates', (req: Request, res: Response) => {
+app.post('/api/templates', (req: Request, res: Response): void => {
   try {
     const { name, content, category, variables } = req.body;
 
     if (!name || !content) {
-      return res.status(400).json({ success: false, error: 'Name and content are required' });
+      res.status(400).json({ success: false, error: 'Name and content are required' });
+      return;
     }
 
     const validation = safetyService.validateMessageContent(content);
     if (!validation.valid) {
-      return res.status(400).json({ success: false, warnings: validation.warnings });
+      res.status(400).json({ success: false, warnings: validation.warnings });
+      return;
     }
 
     const template = database.createTemplate({
@@ -417,7 +436,7 @@ app.post('/api/templates', (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/messages/logs', (req: Request, res: Response) => {
+app.get('/api/messages/logs', (req: Request, res: Response): void => {
   try {
     const { campaignId, phone, status } = req.query;
     const logs = database.getMessageLogs({
@@ -431,7 +450,7 @@ app.get('/api/messages/logs', (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/activity', (req: Request, res: Response) => {
+app.get('/api/activity', (req: Request, res: Response): void => {
   try {
     const limit = parseInt(req.query.limit as string, 10) || 20;
     const activities: any[] = [];
@@ -478,12 +497,13 @@ app.get('/api/activity', (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/shopee/products', async (req: Request, res: Response) => {
+app.get('/api/shopee/products', async (req: Request, res: Response): Promise<void> => {
   try {
     const { keyword, limit, category, minCommission } = req.query;
 
     if (!keyword) {
-      return res.status(400).json({ success: false, error: 'Keyword is required' });
+      res.status(400).json({ success: false, error: 'Keyword is required' });
+      return;
     }
 
     const products = await shopeeAffiliate.searchProducts(
@@ -505,12 +525,13 @@ app.get('/api/shopee/products', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/shopee/generate-link', async (req: Request, res: Response) => {
+app.post('/api/shopee/generate-link', async (req: Request, res: Response): Promise<void> => {
   try {
     const { originUrl, subId } = req.body;
 
     if (!originUrl) {
-      return res.status(400).json({ success: false, error: 'Origin URL is required' });
+      res.status(400).json({ success: false, error: 'Origin URL is required' });
+      return;
     }
 
     const result = await shopeeAffiliate.generateAffiliateLink(originUrl, subId);
@@ -520,12 +541,13 @@ app.post('/api/shopee/generate-link', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/facebook/send', async (req: Request, res: Response) => {
+app.post('/api/facebook/send', async (req: Request, res: Response): Promise<void> => {
   try {
     const { phone, message, templateName } = req.body;
 
     if (!facebookIntegration.isConfigured()) {
-      return res.status(503).json({ success: false, error: 'Facebook WhatsApp Business API not configured' });
+      res.status(503).json({ success: false, error: 'Facebook WhatsApp Business API not configured' });
+      return;
     }
 
     let result;
@@ -534,7 +556,8 @@ app.post('/api/facebook/send', async (req: Request, res: Response) => {
     } else if (message) {
       result = await facebookIntegration.sendTextMessage(phone, message);
     } else {
-      return res.status(400).json({ success: false, error: 'Message or template name is required' });
+      res.status(400).json({ success: false, error: 'Message or template name is required' });
+      return;
     }
 
     res.json({ success: true, data: result });
@@ -543,7 +566,7 @@ app.post('/api/facebook/send', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/facebook/webhook', async (req: Request, res: Response) => {
+app.get('/api/facebook/webhook', async (req: Request, res: Response): Promise<void> => {
   const mode = req.query['hub.mode'] as string;
   const token = req.query['hub.verify_token'] as string;
   const challenge = req.query['hub.challenge'] as string;
@@ -556,12 +579,12 @@ app.get('/api/facebook/webhook', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/facebook/webhook', (req: Request, res: Response) => {
+app.post('/api/facebook/webhook', (req: Request, res: Response): void => {
   logger.info({ body: req.body }, 'Facebook webhook received');
   res.status(200).send('OK');
 });
 
-app.get('/api/safety/metrics', (_req: Request, res: Response) => {
+app.get('/api/safety/metrics', (_req: Request, res: Response): void => {
   try {
     const metrics = safetyService.getSafetyMetrics();
     res.json({ success: true, data: metrics });
@@ -570,7 +593,7 @@ app.get('/api/safety/metrics', (_req: Request, res: Response) => {
   }
 });
 
-app.get('/api/safety/compliance', (_req: Request, res: Response) => {
+app.get('/api/safety/compliance', (_req: Request, res: Response): void => {
   try {
     const compliance = safetyService.getComplianceReport();
     res.json({ success: true, data: compliance });
@@ -579,7 +602,7 @@ app.get('/api/safety/compliance', (_req: Request, res: Response) => {
   }
 });
 
-app.get('*', (req: Request, res: Response) => {
+app.get('*', (req: Request, res: Response): void => {
   res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
@@ -592,3 +615,4 @@ export async function startDashboardServer(): Promise<void> {
     logger.error({ error }, 'Failed to start dashboard server');
   }
 }
+
