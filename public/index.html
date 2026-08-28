@@ -11,6 +11,7 @@
         <header>
             <h1>🚀 WA Bulk / WA Boss</h1>
             <p class="subtitle">Automated WhatsApp Marketing Tool</p>
+            <p class="credit">by Fadil Labs</p>
         </header>
 
         <nav class="nav-tabs">
@@ -52,11 +53,15 @@
                 </div>
             </div>
 
-            <div id="qr-section" class="qr-section" style="display: none;">
-                <h3>Scan QR Code</h3>
-                <p>Buka WhatsApp → Linked Devices → Link a Device, lalu scan QR ini:</p>
-                <img id="qr-image" src="" alt="QR Code" class="qr-image">
-                <p class="qr-note">QR ini kadang expired cepat. Jika blur, klik Connect lagi.</p>
+            <div id="qr-modal" class="qr-modal" style="display: none;">
+                <div class="qr-modal-overlay" onclick="closeQRModal()"></div>
+                <div class="qr-modal-content">
+                    <span class="qr-modal-close" onclick="closeQRModal()">&times;</span>
+                    <h3>Scan QR Code</h3>
+                    <p>Buka WhatsApp → Linked Devices → Link a Device, lalu scan QR ini:</p>
+                    <img id="qr-image-modal" src="" alt="QR Code" class="qr-image">
+                    <p class="qr-note">QR ini kadang expired cepat. Jika blur, klik Connect lagi.</p>
+                </div>
             </div>
 
             <div class="activity-log">

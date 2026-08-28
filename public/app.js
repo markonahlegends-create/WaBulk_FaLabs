@@ -72,7 +72,7 @@ window.showResult = showResult;
 async function connectWhatsApp() {
     const result = await apiCall('/whatsapp/connect', { method: 'POST' });
     if (result.success) {
-        alert('Menghubungkan ke WhatsApp... QR code akan muncul di bawah.');
+        alert('Menghubungkan ke WhatsApp... QR code akan muncul.');
         setTimeout(checkStatus, 3000);
     } else {
         alert('Gagal connect: ' + result.error);
@@ -91,21 +91,27 @@ async function checkStatus() {
         document.getElementById('shopee-status').textContent = result.shopee ? 'Configured' : 'Not Configured';
         document.getElementById('shopee-status').className = `status-badge ${result.shopee ? 'configured' : 'disconnected'}`;
 
-        const qrSection = document.getElementById('qr-section');
-        const qrImage = document.getElementById('qr-image');
+        const qrModal = document.getElementById('qr-modal');
+        const qrImage = document.getElementById('qr-image-modal');
         if (!result.whatsapp) {
             const qrResult = await apiCall('/whatsapp/qr');
             if (qrResult.qr) {
                 qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrResult.qr)}`;
-                qrSection.style.display = 'block';
+                qrModal.style.display = 'flex';
             } else {
-                qrSection.style.display = 'none';
+                qrModal.style.display = 'none';
             }
         } else {
-            qrSection.style.display = 'none';
+            qrModal.style.display = 'none';
         }
     }
 }
+
+function closeQRModal() {
+    document.getElementById('qr-modal').style.display = 'none';
+}
+
+window.closeQRModal = closeQRModal;
 
 window.checkStatus = checkStatus;
 
