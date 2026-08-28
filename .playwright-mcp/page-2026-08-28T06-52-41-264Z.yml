@@ -1,0 +1,54 @@
+- generic [ref=f1e2]:
+  - banner [ref=f1e3]:
+    - heading "🚀 WA Bulk / WA Boss" [level=1] [ref=f1e4]
+    - paragraph [ref=f1e5]: Automated WhatsApp Marketing Tool
+  - navigation [ref=f1e6]:
+    - button "Dashboard" [ref=f1e7] [cursor=pointer]
+    - button "Kirim Pesan" [ref=f1e8] [cursor=pointer]
+    - button "Kontak" [ref=f1e9] [cursor=pointer]
+    - button "Kampanye" [ref=f1e10] [cursor=pointer]
+    - button "Shopee" [ref=f1e11] [cursor=pointer]
+    - button "Safety" [ref=f1e12] [cursor=pointer]
+  - generic [ref=f1e58]:
+    - generic [ref=f1e59]:
+      - heading "Buat Kampanye" [level=2] [ref=f1e60]
+      - generic [ref=f1e61]:
+        - generic [ref=f1e62]:
+          - generic [ref=f1e63]: "Nama Kampanye:"
+          - textbox "Nama Kampanye:" [ref=f1e64]
+        - generic [ref=f1e65]:
+          - generic [ref=f1e66]: "Tipe Kampanye:"
+          - combobox "Tipe Kampanye:" [ref=f1e67]:
+            - option "Pesan Teks" [selected]
+            - option "Gambar + Caption + Link"
+        - generic [ref=f1e68]:
+          - generic [ref=f1e69]: "Pesan:"
+          - textbox "Pesan:" [ref=f1e70]:
+            - /placeholder: "Halo {{name}}, cek promo terbaru kami!"
+        - generic [ref=f1e71]:
+          - generic [ref=f1e72]: "Target Kontak:"
+          - combobox "Target Kontak:" [ref=f1e73]:
+            - option "Semua Kontak" [selected]
+            - option "Berdasarkan Tag"
+            - option "Pilih Manual"
+        - generic [ref=f1e74]:
+          - generic [ref=f1e75]: "Jadwalkan (opsional):"
+          - textbox "Jadwalkan (opsional):" [ref=f1e76]
+        - button "Buat Kampanye" [ref=f1e77] [cursor=pointer]
+    - generic [ref=f1e78]:
+      - heading "Daftar Kampanye" [level=2] [ref=f1e79]
+      - button "Refresh" [ref=f1e80] [cursor=pointer]
+      - generic [ref=f1e82]:
+        - heading "Test Media Campaign" [level=4] [ref=f1e83]
+        - paragraph [ref=f1e84]:
+          - text: "Tipe:"
+          - strong [ref=f1e85]: Gambar + Caption + Link
+        - paragraph [ref=f1e86]:
+          - text: "Target:"
+          - strong [ref=f1e87]: Semua Kontak
+        - paragraph [ref=f1e88]:
+          - text: "Status:"
+          - strong [ref=f1e89]: draft
+        - paragraph [ref=f1e90]: "Terkirim: 0 / 0"
+        - paragraph [ref=f1e91]: "Dibuat: 28/8/2026, 13.46.49"
+        - button "Mulai" [ref=f1e92] [cursor=pointer]

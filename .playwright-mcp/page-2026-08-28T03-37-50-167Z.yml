@@ -1,0 +1,67 @@
+- generic [ref=f16e2]:
+  - banner [ref=f16e3]:
+    - heading "🚀 WA Bulk / WA Boss" [level=1] [ref=f16e4]
+    - paragraph [ref=f16e5]: Automated WhatsApp Marketing Tool
+  - navigation [ref=f16e6]:
+    - button "Dashboard" [ref=f16e7] [cursor=pointer]
+    - button "Kirim Pesan" [ref=f16e8] [cursor=pointer]
+    - button "Kontak" [ref=f16e9] [cursor=pointer]
+    - button "Kampanye" [ref=f16e10] [cursor=pointer]
+    - button "Shopee" [ref=f16e11] [cursor=pointer]
+    - button "Safety" [ref=f16e12] [cursor=pointer]
+  - generic [ref=f16e13]:
+    - generic [ref=f16e14]:
+      - generic [ref=f16e15]:
+        - heading "WhatsApp Status" [level=3] [ref=f16e16]
+        - paragraph [ref=f16e17]: Connected
+        - button "Connect" [ref=f16e18] [cursor=pointer]
+      - generic [ref=f16e19]:
+        - heading "Facebook API" [level=3] [ref=f16e20]
+        - paragraph [ref=f16e21]: Configured
+      - generic [ref=f16e22]:
+        - heading "Shopee API" [level=3] [ref=f16e23]
+        - paragraph [ref=f16e24]: Configured
+      - generic [ref=f16e25]:
+        - heading "Total Kontak" [level=3] [ref=f16e26]
+        - paragraph [ref=f16e27]: "2"
+      - generic [ref=f16e28]:
+        - heading "Pesan Terkirim" [level=3] [ref=f16e29]
+        - paragraph [ref=f16e30]: "0"
+      - generic [ref=f16e31]:
+        - heading "Opt-out Rate" [level=3] [ref=f16e32]
+        - paragraph [ref=f16e33]: 0%
+    - generic [ref=f16e34]:
+      - heading [level=3] [ref=f16e35]:
+        - text: Aktivitas Terbaru
+        - button "Refresh" [ref=f16e36] [cursor=pointer]
+      - generic [ref=f16e37]:
+        - generic [ref=f16e38]:
+          - generic [ref=f16e39]: 28/8/2026, 09.59.22
+          - generic [ref=f16e40]:
+            - strong [ref=f16e41]: Pesan Terkirim
+            - text: "Ke +6281927157103: \"tes produk Link: https://s.shopee.co.id/4LIv0OT8w...\""
+        - generic [ref=f16e42]:
+          - generic [ref=f16e43]: 28/8/2026, 09.59.22
+          - generic [ref=f16e44]:
+            - strong [ref=f16e45]: Pesan Terkirim
+            - text: "Ke +6281927157103: \"tes produk Link: https://s.shopee.co.id/4LIv0OT8w...\""
+        - generic [ref=f16e46]:
+          - generic [ref=f16e47]: 28/8/2026, 09.38.57
+          - generic [ref=f16e48]:
+            - strong [ref=f16e49]: Gagal Kirim
+            - text: "Ke +628123456789: \"Cek produk terbaru!\""
+        - generic [ref=f16e50]:
+          - generic [ref=f16e51]: 28/8/2026, 08.57.16
+          - generic [ref=f16e52]:
+            - strong [ref=f16e53]: Kontak Ditambahkan
+            - text: +628123456789 (Test User)
+        - generic [ref=f16e54]:
+          - generic [ref=f16e55]: 28/8/2026, 08.26.59
+          - generic [ref=f16e56]:
+            - strong [ref=f16e57]: Pesan Terkirim
+            - text: "Ke +6281927157103: \"ceksound\""
+        - generic [ref=f16e58]:
+          - generic [ref=f16e59]: 28/8/2026, 08.26.59
+          - generic [ref=f16e60]:
+            - strong [ref=f16e61]: Kontak Ditambahkan
+            - text: "+6281927157103"

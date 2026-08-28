@@ -1,0 +1,55 @@
+{
+  "name": "wabulk-fadil-labs",
+  "version": "1.0.0",
+  "description": "WA Bulk / WA Boss - Automated WhatsApp Marketing Tool with Shopee Affiliate Integration",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx src/database/migrate.ts",
+    "dashboard": "tsx src/dashboard/server.ts"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.8",
+    "axios": "^1.7.7",
+    "bullmq": "^5.18.0",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "ioredis": "^5.4.1",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "pino": "^9.3.0",
+    "pino-pretty": "^13.0.0",
+    "qrcode-terminal": "^0.12.0",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.0",
+    "@types/node-cron": "^3.0.11",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.2"
+  },
+  "keywords": [
+    "whatsapp",
+    "bulk-messaging",
+    "marketing-automation",
+    "shopee-affiliate",
+    "baileys",
+    "open-source",
+    "marketing-tool"
+  ],
+  "author": "Fadil Labs",
+  "license": "MIT"
+}

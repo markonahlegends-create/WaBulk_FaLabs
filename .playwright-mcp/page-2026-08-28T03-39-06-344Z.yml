@@ -1,0 +1,77 @@
+- generic [ref=f16e2]:
+  - banner [ref=f16e3]:
+    - heading "🚀 WA Bulk / WA Boss" [level=1] [ref=f16e4]
+    - paragraph [ref=f16e5]: Automated WhatsApp Marketing Tool
+  - navigation [ref=f16e6]:
+    - button "Dashboard" [ref=f16e7] [cursor=pointer]
+    - button "Kirim Pesan" [ref=f16e8] [cursor=pointer]
+    - button "Kontak" [active] [ref=f16e9] [cursor=pointer]
+    - button "Kampanye" [ref=f16e10] [cursor=pointer]
+    - button "Shopee" [ref=f16e11] [cursor=pointer]
+    - button "Safety" [ref=f16e12] [cursor=pointer]
+  - generic [ref=f16e62]:
+    - generic [ref=f16e63]:
+      - heading "Tambah Kontak" [level=2] [ref=f16e64]
+      - generic [ref=f16e65]:
+        - generic [ref=f16e66]:
+          - generic [ref=f16e67]: "Nomor WhatsApp:"
+          - textbox "Nomor WhatsApp:" [ref=f16e68]:
+            - /placeholder: "628123456789"
+        - generic [ref=f16e69]:
+          - generic [ref=f16e70]: "Nama:"
+          - textbox "Nama:" [ref=f16e71]:
+            - /placeholder: Budi
+        - generic [ref=f16e72]:
+          - generic [ref=f16e73]: "Tags (pisah koma):"
+          - textbox "Tags (pisah koma):" [ref=f16e74]:
+            - /placeholder: pelanggan, vip
+        - button "Tambah Kontak" [ref=f16e75] [cursor=pointer]
+    - generic [ref=f16e76]:
+      - heading "Daftar Kontak" [level=2] [ref=f16e77]
+      - generic [ref=f16e78]:
+        - generic [ref=f16e79]:
+          - textbox "Cari nama/nomor..." [ref=f16e80]
+          - combobox [ref=f16e81]:
+            - option "Semua Tags" [selected]
+            - option "test"
+          - combobox [ref=f16e82]:
+            - option "Semua Status" [selected]
+            - option "Opted In"
+            - option "Opted Out"
+        - generic [ref=f16e83]:
+          - button "Export JSON" [ref=f16e84] [cursor=pointer]
+          - button "Export CSV" [ref=f16e85] [cursor=pointer]
+          - generic [ref=f16e86] [cursor=pointer]: Import
+          - button "Refresh" [ref=f16e87] [cursor=pointer]
+      - table [ref=f16e89]:
+        - rowgroup [ref=f16e90]:
+          - row [ref=f16e91]:
+            - columnheader "ID" [ref=f16e92]
+            - columnheader "Nomor" [ref=f16e93]
+            - columnheader "Nama" [ref=f16e94]
+            - columnheader "Tags" [ref=f16e95]
+            - columnheader "Status" [ref=f16e96]
+            - columnheader "Pesan" [ref=f16e97]
+            - columnheader "Dibuat" [ref=f16e98]
+            - columnheader "Aksi" [ref=f16e99]
+        - rowgroup [ref=f16e100]:
+          - row [ref=f16e101]:
+            - cell "2" [ref=f16e102]
+            - cell "+628123456789" [ref=f16e103]
+            - cell "Test User" [ref=f16e104]
+            - cell "test" [ref=f16e105]
+            - cell "Opted In" [ref=f16e107]
+            - cell "0" [ref=f16e109]
+            - cell "28/8/2026, 08.57.16" [ref=f16e110]
+            - cell [ref=f16e111]:
+              - button "Hapus" [ref=f16e112] [cursor=pointer]
+          - row [ref=f16e113]:
+            - cell "1" [ref=f16e114]
+            - cell "+6281927157103" [ref=f16e115]
+            - cell "-" [ref=f16e116]
+            - cell "-" [ref=f16e117]
+            - cell "Opted In" [ref=f16e118]
+            - cell "1" [ref=f16e120]
+            - cell "28/8/2026, 08.26.59" [ref=f16e121]
+            - cell [ref=f16e122]:
+              - button "Hapus" [ref=f16e123] [cursor=pointer]

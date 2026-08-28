@@ -1,0 +1,52 @@
+- generic [ref=f4e2]:
+  - banner [ref=f4e3]:
+    - heading "🚀 WA Bulk / WA Boss" [level=1] [ref=f4e4]
+    - paragraph [ref=f4e5]: Automated WhatsApp Marketing Tool
+  - navigation [ref=f4e6]:
+    - button "Dashboard" [ref=f4e7] [cursor=pointer]
+    - button "Kirim Pesan" [ref=f4e8] [cursor=pointer]
+    - button "Kontak" [ref=f4e9] [cursor=pointer]
+    - button "Kampanye" [ref=f4e10] [cursor=pointer]
+    - button "Shopee" [ref=f4e11] [cursor=pointer]
+    - button "Safety" [ref=f4e12] [cursor=pointer]
+  - generic [ref=f4e13]:
+    - generic [ref=f4e14]:
+      - generic [ref=f4e15]:
+        - heading "WhatsApp Status" [level=3] [ref=f4e16]
+        - paragraph [ref=f4e17]: Connected
+        - button "Connect" [ref=f4e18] [cursor=pointer]
+      - generic [ref=f4e19]:
+        - heading "Facebook API" [level=3] [ref=f4e20]
+        - paragraph [ref=f4e21]: Configured
+      - generic [ref=f4e22]:
+        - heading "Shopee API" [level=3] [ref=f4e23]
+        - paragraph [ref=f4e24]: Configured
+      - generic [ref=f4e25]:
+        - heading "Total Kontak" [level=3] [ref=f4e26]
+        - paragraph [ref=f4e27]: "2"
+      - generic [ref=f4e28]:
+        - heading "Pesan Terkirim" [level=3] [ref=f4e29]
+        - paragraph [ref=f4e30]: "0"
+      - generic [ref=f4e31]:
+        - heading "Opt-out Rate" [level=3] [ref=f4e32]
+        - paragraph [ref=f4e33]: 0%
+    - generic [ref=f4e34]:
+      - heading [level=3] [ref=f4e35]:
+        - text: Aktivitas Terbaru
+        - button "Refresh" [ref=f4e36] [cursor=pointer]
+      - generic [ref=f4e37]:
+        - generic [ref=f4e50]:
+          - generic [ref=f4e51]: 28/8/2026, 08.57.16
+          - generic [ref=f4e52]:
+            - strong [ref=f4e53]: Kontak Ditambahkan
+            - text: +628123456789 (Test User)
+        - generic [ref=f4e54]:
+          - generic [ref=f4e55]: 28/8/2026, 08.26.59
+          - generic [ref=f4e56]:
+            - strong [ref=f4e57]: Pesan Terkirim
+            - text: "Ke +6281927157103: \"ceksound\""
+        - generic [ref=f4e58]:
+          - generic [ref=f4e59]: 28/8/2026, 08.26.59
+          - generic [ref=f4e60]:
+            - strong [ref=f4e61]: Kontak Ditambahkan
+            - text: "+6281927157103"

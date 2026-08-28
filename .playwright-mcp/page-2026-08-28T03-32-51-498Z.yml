@@ -1,0 +1,37 @@
+- generic [ref=f15e2]:
+  - banner [ref=f15e3]:
+    - heading "🚀 WA Bulk / WA Boss" [level=1] [ref=f15e4]
+    - paragraph [ref=f15e5]: Automated WhatsApp Marketing Tool
+  - navigation [ref=f15e6]:
+    - button "Dashboard" [ref=f15e7] [cursor=pointer]
+    - button "Kirim Pesan" [ref=f15e8] [cursor=pointer]
+    - button "Kontak" [ref=f15e9] [cursor=pointer]
+    - button "Kampanye" [ref=f15e10] [cursor=pointer]
+    - button "Shopee" [ref=f15e11] [cursor=pointer]
+    - button "Safety" [ref=f15e12] [cursor=pointer]
+  - generic [ref=f15e13]:
+    - generic [ref=f15e14]:
+      - generic [ref=f15e15]:
+        - heading "WhatsApp Status" [level=3] [ref=f15e16]
+        - paragraph [ref=f15e17]: Disconnected
+        - button "Connect" [ref=f15e18] [cursor=pointer]
+      - generic [ref=f15e19]:
+        - heading "Facebook API" [level=3] [ref=f15e20]
+        - paragraph [ref=f15e21]: Not Configured
+      - generic [ref=f15e22]:
+        - heading "Shopee API" [level=3] [ref=f15e23]
+        - paragraph [ref=f15e24]: Not Configured
+      - generic [ref=f15e25]:
+        - heading "Total Kontak" [level=3] [ref=f15e26]
+        - paragraph [ref=f15e27]: "0"
+      - generic [ref=f15e28]:
+        - heading "Pesan Terkirim" [level=3] [ref=f15e29]
+        - paragraph [ref=f15e30]: "0"
+      - generic [ref=f15e31]:
+        - heading "Opt-out Rate" [level=3] [ref=f15e32]
+        - paragraph [ref=f15e33]: 0%
+    - generic [ref=f15e34]:
+      - heading [level=3] [ref=f15e35]:
+        - text: Aktivitas Terbaru
+        - button "Refresh" [ref=f15e36] [cursor=pointer]
+      - paragraph [ref=f15e38]: Belum ada aktivitas

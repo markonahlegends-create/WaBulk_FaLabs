@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WA Bulk / WA Boss - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 WA Bulk / WA Boss</h1>
+            <p class="subtitle">Automated WhatsApp Marketing Tool</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('dashboard', this)">Dashboard</button>
+            <button class="tab-btn" onclick="showTab('send', this)">Kirim Pesan</button>
+            <button class="tab-btn" onclick="showTab('contacts', this)">Kontak</button>
+            <button class="tab-btn" onclick="showTab('campaigns', this)">Kampanye</button>
+            <button class="tab-btn" onclick="showTab('shopee', this)">Shopee</button>
+            <button class="tab-btn" onclick="showTab('safety', this)">Safety</button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="status-cards">
+                <div class="card">
+                    <h3>WhatsApp Status</h3>
+                    <p id="wa-status" class="status-badge disconnected">Disconnected</p>
+                    <button onclick="connectWhatsApp()" class="btn btn-primary">Connect</button>
+                </div>
+                <div class="card">
+                    <h3>Facebook API</h3>
+                    <p id="fb-status" class="status-badge disconnected">Not Configured</p>
+                </div>
+                <div class="card">
+                    <h3>Shopee API</h3>
+                    <p id="shopee-status" class="status-badge disconnected">Not Configured</p>
+                </div>
+                <div class="card">
+                    <h3>Total Kontak</h3>
+                    <p id="total-contacts" class="count">0</p>
+                </div>
+                <div class="card">
+                    <h3>Pesan Terkirim</h3>
+                    <p id="total-sent" class="count">0</p>
+                </div>
+                <div class="card">
+                    <h3>Opt-out Rate</h3>
+                    <p id="optout-rate" class="count">0%</p>
+                </div>
+            </div>
+
+            <div id="qr-section" class="qr-section" style="display: none;">
+                <h3>Scan QR Code</h3>
+                <p>Buka WhatsApp → Linked Devices → Link a Device, lalu scan QR ini:</p>
+                <img id="qr-image" src="" alt="QR Code" class="qr-image">
+                <p class="qr-note">QR ini kadang expired cepat. Jika blur, klik Connect lagi.</p>
+            </div>
+
+            <div class="activity-log">
+                <h3>Aktivitas Terbaru <button onclick="loadActivity()" class="btn btn-secondary" style="margin-left: 10px;">Refresh</button></h3>
+                <div id="activity-list" class="log-list">
+                    <p class="empty-state">Belum ada aktivitas</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Send Message Tab -->
+        <div id="tab-send" class="tab-content">
+            <div class="form-section">
+                <h2>Kirim Pesan WhatsApp</h2>
+                <form onsubmit="sendMessage(event)">
+                    <div class="form-group">
+                        <label for="phone">Nomor WhatsApp:</label>
+                        <input type="text" id="phone" placeholder="628123456789" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Pesan:</label>
+                        <textarea id="message" rows="5" placeholder="Halo! Cek produk terbaru kami..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Kirim Pesan</button>
+                </form>
+
+                <div class="result" id="send-result"></div>
+            </div>
+
+            <div class="form-section">
+                <h2>Kirim Gambar + Caption + Link</h2>
+                <form onsubmit="sendMedia(event)">
+                    <div class="form-group">
+                        <label for="media-phone">Nomor WhatsApp:</label>
+                        <input type="text" id="media-phone" placeholder="628123456789" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="media-url">URL Gambar:</label>
+                        <input type="url" id="media-url" placeholder="https://example.com/product.jpg" required onchange="previewImage('media-url', 'media-preview')">
+                    </div>
+                    <div class="form-group">
+                        <label for="media-caption">Caption:</label>
+                        <textarea id="media-caption" rows="3" placeholder="Nama produk, harga, benefit..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="media-link">Link Affiliate/Landing Page (opsional):</label>
+                        <input type="url" id="media-link" placeholder="https://shopee.co.id/...">
+                    </div>
+                    <div class="form-group">
+                        <label>Preview:</label>
+                        <img id="media-preview" src="" alt="Preview" style="max-width: 200px; max-height: 200px; display: none; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Kirim Gambar + Caption</button>
+                </form>
+
+                <div class="result" id="media-result"></div>
+            </div>
+
+            <div class="form-section">
+                <h2>Kirim Bulk Gambar</h2>
+                <form onsubmit="sendBulkMedia(event)">
+                    <div class="form-group">
+                        <label for="bulk-media-phones">Nomor (pisah dengan koma):</label>
+                        <textarea id="bulk-media-phones" rows="3" placeholder="628123456789, 628987654321" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="bulk-media-url">URL Gambar:</label>
+                        <input type="url" id="bulk-media-url" placeholder="https://example.com/product.jpg" required onchange="previewImage('bulk-media-url', 'bulk-media-preview')">
+                    </div>
+                    <div class="form-group">
+                        <label for="bulk-media-caption">Caption:</label>
+                        <textarea id="bulk-media-caption" rows="3" placeholder="Nama produk, harga, benefit..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="bulk-media-link">Link Affiliate/Landing Page (opsional):</label>
+                        <input type="url" id="bulk-media-link" placeholder="https://shopee.co.id/...">
+                    </div>
+                    <div class="form-group">
+                        <label>Preview:</label>
+                        <img id="bulk-media-preview" src="" alt="Preview" style="max-width: 200px; max-height: 200px; display: none; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Kirim Bulk Gambar (Max 100)</button>
+                </form>
+
+                <div class="result" id="bulk-media-result"></div>
+            </div>
+        </div>
+
+        <!-- Contacts Tab -->
+        <div id="tab-contacts" class="tab-content">
+            <div class="form-section">
+                <h2>Tambah Kontak</h2>
+                <form onsubmit="addContact(event)">
+                    <div class="form-group">
+                        <label for="contact-phone">Nomor WhatsApp:</label>
+                        <input type="text" id="contact-phone" placeholder="628123456789" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-name">Nama:</label>
+                        <input type="text" id="contact-name" placeholder="Budi">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-tags">Tags (pisah koma):</label>
+                        <input type="text" id="contact-tags" placeholder="pelanggan, vip">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Tambah Kontak</button>
+                </form>
+            </div>
+
+            <div class="list-section">
+                <h2>Daftar Kontak</h2>
+                <div class="toolbar">
+                    <div class="filters">
+                        <input type="text" id="contact-search" placeholder="Cari nama/nomor..." oninput="loadContacts()">
+                        <select id="contact-tag-filter" onchange="loadContacts()">
+                            <option value="">Semua Tags</option>
+                        </select>
+                        <select id="contact-status-filter" onchange="loadContacts()">
+                            <option value="">Semua Status</option>
+                            <option value="opted-in">Opted In</option>
+                            <option value="opted-out">Opted Out</option>
+                        </select>
+                    </div>
+                    <div class="actions">
+                        <button onclick="exportContacts()" class="btn btn-secondary">Export JSON</button>
+                        <button onclick="exportContactsCSV()" class="btn btn-secondary">Export CSV</button>
+                        <label class="btn btn-secondary">
+                            Import
+                            <input type="file" id="contact-import-file" accept=".json,.csv" style="display: none;" onchange="importContacts(event)">
+                        </label>
+                        <button onclick="loadContacts()" class="btn btn-secondary">Refresh</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nomor</th>
+                                <th>Nama</th>
+                                <th>Tags</th>
+                                <th>Status</th>
+                                <th>Pesan</th>
+                                <th>Dibuat</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contacts-table-body">
+                            <tr><td colspan="8" class="empty-row">Belum ada kontak</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="contacts-pagination"></div>
+            </div>
+        </div>
+
+        <!-- Campaigns Tab -->
+        <div id="tab-campaigns" class="tab-content">
+            <div class="form-section">
+                <h2>Buat Kampanye</h2>
+                <form onsubmit="createCampaign(event)">
+                    <div class="form-group">
+                        <label for="campaign-name">Nama Kampanye:</label>
+                        <input type="text" id="campaign-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="campaign-type">Tipe Kampanye:</label>
+                        <select id="campaign-type" onchange="onCampaignTypeChange()">
+                            <option value="text">Pesan Teks</option>
+                            <option value="media">Gambar + Caption + Link</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="campaign-message">Pesan:</label>
+                        <textarea id="campaign-message" rows="4" placeholder="Halo {{name}}, cek promo terbaru kami!"></textarea>
+                    </div>
+                    <div id="media-fields" class="media-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="campaign-media-url">URL Gambar:</label>
+                            <input type="url" id="campaign-media-url" placeholder="https://example.com/product.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label for="campaign-caption">Caption:</label>
+                            <textarea id="campaign-caption" rows="3" placeholder="Nama produk, harga, benefit..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="campaign-link">Link Affiliate/Landing Page:</label>
+                            <input type="url" id="campaign-link" placeholder="https://shopee.co.id/...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="campaign-target-mode">Target Kontak:</label>
+                        <select id="campaign-target-mode" onchange="onTargetModeChange()">
+                            <option value="all">Semua Kontak</option>
+                            <option value="tag">Berdasarkan Tag</option>
+                            <option value="manual">Pilih Manual</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="target-tag-group" style="display: none;">
+                        <label for="campaign-target-tag">Pilih Tag:</label>
+                        <select id="campaign-target-tag">
+                            <option value="">Pilih tag...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="manual-phones-group" style="display: none;">
+                        <label for="campaign-manual-phones">Nomor WhatsApp (pisah koma):</label>
+                        <textarea id="campaign-manual-phones" rows="3" placeholder="628123456789, 628987654321"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="campaign-schedule">Jadwalkan (opsional):</label>
+                        <input type="datetime-local" id="campaign-schedule">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Buat Kampanye</button>
+                </form>
+            </div>
+
+            <div class="list-section">
+                <h2>Daftar Kampanye</h2>
+                <button onclick="loadCampaigns()" class="btn btn-secondary">Refresh</button>
+                <div id="campaigns-list" class="list-container">
+                    <p class="empty-state">Belum ada kampanye</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shopee Tab -->
+        <div id="tab-shopee" class="tab-content">
+            <div class="form-section">
+                <h2>Cari Produk Shopee</h2>
+                <form onsubmit="searchShopeeProducts(event)">
+                    <div class="form-group">
+                        <label for="shopee-keyword">Kata Kunci:</label>
+                        <input type="text" id="shopee-keyword" placeholder="sepatu" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Cari Produk</button>
+                </form>
+
+                <div id="shopee-results" class="product-grid"></div>
+            </div>
+        </div>
+
+        <!-- Safety Tab -->
+        <div id="tab-safety" class="tab-content">
+            <div class="safety-metrics">
+                <h2>Safety Metrics</h2>
+                <button onclick="loadSafetyMetrics()" class="btn btn-secondary">Refresh</button>
+                <div id="safety-metrics" class="metrics-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

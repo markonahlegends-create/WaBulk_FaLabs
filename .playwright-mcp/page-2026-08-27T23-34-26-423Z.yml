@@ -1,0 +1,35 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "🚀 WA Bulk / WA Boss" [level=1] [ref=e4]
+    - paragraph [ref=e5]: Automated WhatsApp Marketing Tool
+  - navigation [ref=e6]:
+    - button "Dashboard" [ref=e7] [cursor=pointer]
+    - button "Kirim Pesan" [active] [ref=e8] [cursor=pointer]
+    - button "Kontak" [ref=e9] [cursor=pointer]
+    - button "Kampanye" [ref=e10] [cursor=pointer]
+    - button "Shopee" [ref=e11] [cursor=pointer]
+    - button "Safety" [ref=e12] [cursor=pointer]
+  - generic [ref=e38]:
+    - generic [ref=e39]:
+      - heading "Kirim Pesan WhatsApp" [level=2] [ref=e40]
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]: "Nomor WhatsApp:"
+          - textbox "Nomor WhatsApp:" [ref=e44]:
+            - /placeholder: "628123456789"
+        - generic [ref=e45]:
+          - generic [ref=e46]: "Pesan:"
+          - textbox "Pesan:" [ref=e47]:
+            - /placeholder: Halo! Cek produk terbaru kami...
+        - button "Kirim Pesan" [ref=e48] [cursor=pointer]
+    - generic [ref=e49]:
+      - heading "Kirim Bulk Pesan" [level=2] [ref=e50]
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]: "Nomor (pisah dengan koma):"
+          - textbox "Nomor (pisah dengan koma):" [ref=e54]:
+            - /placeholder: 628123456789, 628987654321
+        - generic [ref=e55]:
+          - generic [ref=e56]: "Pesan:"
+          - textbox "Pesan:" [ref=e57]
+        - button "Kirim Bulk (Max 100)" [ref=e58] [cursor=pointer]
