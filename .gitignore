@@ -29,8 +29,6 @@ logs/
 auth_info/
 auth_info_baileys/
 *.session
-*.json
-!package.json
 
 # OS
 .DS_Store
