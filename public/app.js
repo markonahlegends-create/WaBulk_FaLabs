@@ -1,4 +1,4 @@
-const API_BASE = '';
+const API_BASE = '/api';
 const AUTH_TOKEN = 'change_me_in_production';
 
 function showTab(tabName, btnElement) {
