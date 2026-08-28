@@ -26,12 +26,14 @@ async function main() {
     await database.init();
     console.log('Database initialized');
 
-    await whatsAppService.connect();
-    console.log('WhatsApp service started');
-    console.log('QR code akan muncul di dashboard atau terminal.');
-
-    await startDashboardServer();
+    startDashboardServer();
     console.log(`Dashboard available at http://0.0.0.0:${environment.port}`);
+
+    whatsAppService.connect().catch((error) => {
+      console.error('WhatsApp service failed to start:', error);
+    });
+
+    console.log('QR code akan muncul di dashboard atau terminal.');
 
     const gracefulShutdown = (signal: string) => {
       console.log(`${signal} received, shutting down gracefully...`);

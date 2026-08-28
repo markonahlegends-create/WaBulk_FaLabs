@@ -14,14 +14,16 @@ async function main() {
     await database.init();
     logger.info('Database initialized');
 
-    await whatsAppService.connect();
-    logger.info('WhatsApp service started');
-
     startDashboardServer();
     logger.info('Dashboard server started');
 
+    logger.info(`Dashboard: http://0.0.0.0:${environment.port}`);
+
+    whatsAppService.connect().catch((error) => {
+      logger.error({ error }, 'WhatsApp service failed to start');
+    });
+
     logger.info('All services started successfully');
-    logger.info(`Dashboard: http://localhost:${environment.port}`);
     logger.info('Press Ctrl+C to stop');
   } catch (error) {
     logger.error({ error }, 'Failed to start application');
