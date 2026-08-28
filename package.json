@@ -51,5 +51,8 @@
     "marketing-tool"
   ],
   "author": "Fadil Labs",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
 }
