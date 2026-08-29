@@ -81,24 +81,131 @@ async function connectWhatsApp() {
 
 window.connectWhatsApp = connectWhatsApp;
 
+let allGroups = [];
+
 async function loadGroups() {
     const result = await apiCall('/whatsapp/groups');
     const list = document.getElementById('groups-list');
 
     if (result.success && result.data && result.data.length > 0) {
-        list.innerHTML = result.data.map(group => `
-            <div class="list-item">
-                <div>
-                    <strong>${group.name}</strong>
-                    <p class="muted">${group.id}</p>
-                </div>
-                <button onclick="copyGroupId('${group.id}')" class="btn btn-secondary">Copy ID</button>
-            </div>
-        `).join('');
+        allGroups = result.data;
+        renderGroups(allGroups);
     } else {
+        allGroups = [];
         list.innerHTML = '<p class="empty-state">Tidak ada grup. Pastikan bot sudah join grup WhatsApp.</p>';
     }
 }
+
+function renderGroups(groups) {
+    const list = document.getElementById('groups-list');
+    if (groups.length === 0) {
+        list.innerHTML = '<p class="empty-state">Tidak ada grup yang cocok.</p>';
+        return;
+    }
+    list.innerHTML = groups.map(group => `
+        <div class="list-item">
+            <div>
+                <strong>${group.name}</strong>
+                <p class="muted">${group.id}</p>
+            </div>
+            <button onclick="copyGroupId('${group.id}')" class="btn btn-secondary">Copy ID</button>
+        </div>
+    `).join('');
+}
+
+function filterGroups() {
+    const search = document.getElementById('group-search').value.toLowerCase();
+    const filtered = allGroups.filter(g => (g.name || '').toLowerCase().includes(search) || g.id.toLowerCase().includes(search));
+    renderGroups(filtered);
+}
+
+window.filterGroups = filterGroups;
+
+async function loadSchedules() {
+    const upcomingResult = await apiCall('/api/group-schedules?status=upcoming');
+    const completedResult = await apiCall('/api/group-schedules?status=completed');
+
+    renderUpcomingSchedules(upcomingResult.success && upcomingResult.data ? upcomingResult.data : []);
+    renderCompletedSchedules(completedResult.success && completedResult.data ? completedResult.data : []);
+}
+
+function renderUpcomingSchedules(schedules) {
+    const tbody = document.getElementById('upcoming-schedules-body');
+    if (!schedules || schedules.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-row">Belum ada jadwal</td></tr>';
+        return;
+    }
+    const typeLabel = { once: 'Sekali', daily: 'Harian', weekly: 'Mingguan' };
+    tbody.innerHTML = schedules.map(s => `
+        <tr>
+            <td>${s.groupName || s.groupId}</td>
+            <td>${s.message.slice(0, 60)}${s.message.length > 60 ? '...' : ''}</td>
+            <td>${typeLabel[s.scheduleType] || s.scheduleType}</td>
+            <td>${new Date(s.scheduleAt).toLocaleString('id-ID')}</td>
+            <td>
+                <button onclick="openEditScheduleModal(${s.id})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.85em;" title="Edit">✏️</button>
+                <button onclick="deleteSchedule(${s.id})" class="btn btn-danger" style="padding: 4px 8px; font-size: 0.85em;" title="Batalkan">Batalkan</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderCompletedSchedules(schedules) {
+    const tbody = document.getElementById('completed-schedules-body');
+    if (!schedules || schedules.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-row">Belum ada jadwal yang selesai</td></tr>';
+        return;
+    }
+    const typeLabel = { once: 'Sekali', daily: 'Harian', weekly: 'Mingguan' };
+    tbody.innerHTML = schedules.map(s => `
+        <tr>
+            <td>${s.groupName || s.groupId}</td>
+            <td>${s.message.slice(0, 60)}${s.message.length > 60 ? '...' : ''}</td>
+            <td>${typeLabel[s.scheduleType] || s.scheduleType}</td>
+            <td>${new Date(s.scheduleAt).toLocaleString('id-ID')}</td>
+            <td>${s.sentAt ? new Date(s.sentAt).toLocaleString('id-ID') : '-'}</td>
+        </tr>
+    `).join('');
+}
+
+function openEditScheduleModal(scheduleId) {
+    const newMessage = prompt('Pesan baru:');
+    if (newMessage === null) return;
+
+    const newMediaUrl = prompt('URL Media baru (kosongkan jika tidak ada):');
+    const newCaption = prompt('Caption baru (kosongkan jika tidak ada):');
+
+    apiCall(`/api/group-schedules/${scheduleId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            message: newMessage || undefined,
+            mediaUrl: newMediaUrl || undefined,
+            caption: newCaption || undefined,
+        }),
+    }).then(result => {
+        if (result.success) {
+            alert('Jadwal berhasil diperbarui!');
+            loadSchedules();
+        } else {
+            alert('Gagal memperbarui: ' + result.error);
+        }
+    });
+}
+
+async function deleteSchedule(id) {
+    if (!confirm('Batalkan jadwal ini?')) return;
+    const result = await apiCall(`/api/group-schedules/${id}`, { method: 'DELETE' });
+    if (result.success) {
+        alert('Jadwal dibatalkan');
+        loadSchedules();
+    } else {
+        alert('Gagal: ' + result.error);
+    }
+}
+
+window.openEditScheduleModal = openEditScheduleModal;
+window.deleteSchedule = deleteSchedule;
+window.loadSchedules = loadSchedules;
 
 window.loadGroups = loadGroups;
 
@@ -138,6 +245,7 @@ async function scheduleGroupMessage(event) {
     const message = document.getElementById('schedule-group-message').value;
     const mediaUrl = document.getElementById('schedule-group-media-url').value;
     const caption = document.getElementById('schedule-group-caption').value;
+    const scheduleType = document.getElementById('schedule-group-type').value;
     const scheduleAt = document.getElementById('schedule-group-time').value;
 
     if (!scheduleAt) {
@@ -147,10 +255,18 @@ async function scheduleGroupMessage(event) {
 
     const result = await apiCall('/whatsapp/schedule-group', {
         method: 'POST',
-        body: JSON.stringify({ groupId, message, mediaUrl: mediaUrl || undefined, caption: caption || undefined, scheduleAt }),
+        body: JSON.stringify({ groupId, message, mediaUrl: mediaUrl || undefined, caption: caption || undefined, scheduleAt, scheduleType }),
     });
 
     showResult('schedule-group-result', result, 'Pesan grup berhasil dijadwalkan!', 'Gagal jadwalkan:');
+    if (result.success) {
+        document.getElementById('schedule-group-id').value = '';
+        document.getElementById('schedule-group-message').value = '';
+        document.getElementById('schedule-group-media-url').value = '';
+        document.getElementById('schedule-group-caption').value = '';
+        document.getElementById('schedule-group-time').value = '';
+        loadSchedules();
+    }
 }
 
 window.scheduleGroupMessage = scheduleGroupMessage;
@@ -773,10 +889,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCampaignTags();
     loadSafetyMetrics();
     loadActivity();
+    loadGroups();
+    loadSchedules();
 
     onCampaignTypeChange();
     onTargetModeChange();
 
     setInterval(checkStatus, 30000);
     setInterval(loadActivity, 15000);
+    setInterval(loadSchedules, 30000);
 });

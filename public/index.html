@@ -199,6 +199,14 @@
                         <textarea id="schedule-group-caption" rows="2" placeholder="Caption untuk media..."></textarea>
                     </div>
                     <div class="form-group">
+                        <label for="schedule-group-type">Tipe Jadwal:</label>
+                        <select id="schedule-group-type">
+                            <option value="once">Sekali</option>
+                            <option value="daily">Harian</option>
+                            <option value="weekly">Mingguan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="schedule-group-time">Jadwalkan (WIB):</label>
                         <input type="datetime-local" id="schedule-group-time" required>
                     </div>
@@ -210,8 +218,51 @@
 
             <div class="list-section">
                 <h2>Daftar Grup <button onclick="loadGroups()" class="btn btn-secondary" style="margin-left: 10px;">Refresh</button></h2>
+                <div class="toolbar">
+                    <input type="text" id="group-search" placeholder="Cari nama grup..." oninput="filterGroups()">
+                </div>
                 <div id="groups-list" class="list-container">
                     <p class="empty-state">Belum ada grup. Klik "Refresh" untuk memuat daftar grup.</p>
+                </div>
+            </div>
+
+            <div class="list-section">
+                <h2>Jadwal Akan Berjalan</h2>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Grup</th>
+                                <th>Pesan</th>
+                                <th>Tipe</th>
+                                <th>Jadwal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="upcoming-schedules-body">
+                            <tr><td colspan="5" class="empty-row">Belum ada jadwal</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="list-section">
+                <h2>Jadwal Telah Berjalan</h2>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Grup</th>
+                                <th>Pesan</th>
+                                <th>Tipe</th>
+                                <th>Jadwal</th>
+                                <th>Dikirim</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completed-schedules-body">
+                            <tr><td colspan="5" class="empty-row">Belum ada jadwal yang selesai</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

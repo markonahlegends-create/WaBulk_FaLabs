@@ -2,7 +2,7 @@ import { environment } from '../config/env';
 import { logger } from '../utils/logger';
 import fs from 'fs';
 import path from 'path';
-import { Contact, Campaign, MessageTemplate, MessageLog, AffiliateProduct, SessionState, WarmupState } from '../types';
+import { Contact, Campaign, MessageTemplate, MessageLog, AffiliateProduct, SessionState, WarmupState, GroupSchedule } from '../types';
 
 const DB_FILE = environment.databasePath;
 
@@ -16,6 +16,7 @@ class JsonDatabase {
     sessions: SessionState[];
     warmup_state: WarmupState[];
     opt_out_list: { phone: string; reason?: string; createdAt: string }[];
+    group_schedules: GroupSchedule[];
     nextIds: {
       contacts: number;
       campaigns: number;
@@ -23,6 +24,7 @@ class JsonDatabase {
       message_logs: number;
       warmup_state: number;
       opt_out_list: number;
+      group_schedules: number;
     };
   };
 
@@ -36,6 +38,7 @@ class JsonDatabase {
       sessions: [],
       warmup_state: [],
       opt_out_list: [],
+      group_schedules: [],
       nextIds: {
         contacts: 1,
         campaigns: 1,
@@ -43,6 +46,7 @@ class JsonDatabase {
         message_logs: 1,
         warmup_state: 1,
         opt_out_list: 1,
+        group_schedules: 1,
       },
     };
   }
@@ -332,6 +336,50 @@ class JsonDatabase {
     }
 
     return products.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
+  }
+
+  // Group Schedules
+  createGroupSchedule(schedule: Omit<GroupSchedule, 'id' | 'createdAt' | 'updatedAt'>): GroupSchedule {
+    const newSchedule: GroupSchedule = {
+      ...schedule,
+      id: this.getNextId('group_schedules'),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.data.group_schedules.push(newSchedule);
+    this.save();
+    return newSchedule;
+  }
+
+  getGroupSchedule(id: number): GroupSchedule | undefined {
+    return this.data.group_schedules.find(s => s.id === id);
+  }
+
+  getGroupSchedules(filters?: { status?: string; scheduleType?: string }): GroupSchedule[] {
+    let schedules = [...this.data.group_schedules];
+    if (filters?.status) {
+      schedules = schedules.filter(s => s.status === filters.status);
+    }
+    if (filters?.scheduleType) {
+      schedules = schedules.filter(s => s.scheduleType === filters.scheduleType);
+    }
+    return schedules.sort((a, b) => new Date(a.scheduleAt).getTime() - new Date(b.scheduleAt).getTime());
+  }
+
+  updateGroupSchedule(id: number, updates: Partial<GroupSchedule>): void {
+    const schedule = this.data.group_schedules.find(s => s.id === id);
+    if (schedule) {
+      Object.assign(schedule, updates, { updatedAt: new Date().toISOString() });
+      this.save();
+    }
+  }
+
+  deleteGroupSchedule(id: number): boolean {
+    const index = this.data.group_schedules.findIndex(s => s.id === id);
+    if (index === -1) return false;
+    this.data.group_schedules.splice(index, 1);
+    this.save();
+    return true;
   }
 }
 

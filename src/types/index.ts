@@ -98,3 +98,20 @@ export interface WarmupState {
   sentToday: number;
   date: string;
 }
+
+export interface GroupSchedule {
+  id?: number;
+  taskId: string;
+  groupId: string;
+  groupName: string;
+  message: string;
+  mediaUrl?: string;
+  caption?: string;
+  scheduleType: 'once' | 'daily' | 'weekly';
+  scheduleAt: string;
+  cronExpression?: string;
+  status: 'upcoming' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+  sentAt?: string;
+}

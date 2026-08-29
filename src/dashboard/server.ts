@@ -1,5 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import cron from 'node-cron';
 import { environment } from '../config/env';
 import { logger } from '../utils/logger';
 import { whatsAppService } from '../services/whatsAppService';
@@ -8,7 +9,7 @@ import { shopeeAffiliate } from '../services/shopeeAffiliate';
 import { facebookIntegration } from '../services/facebookIntegration';
 import { campaignScheduler } from '../services/campaignScheduler';
 import { safetyService } from '../services/safetyService';
-import { Campaign, Contact, MessageTemplate, MessageLog, AffiliateProduct } from '../types';
+import { Campaign, Contact, MessageTemplate, MessageLog, AffiliateProduct, GroupSchedule } from '../types';
 
 import path from 'path';
 
@@ -19,7 +20,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-const scheduledGroupTasks = new Map<string, NodeJS.Timeout>();
+const scheduledGroupTasks = new Map<string, { timeout?: NodeJS.Timeout; cron?: cron.ScheduledTask }>();
 
 const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -186,7 +187,7 @@ app.post('/api/whatsapp/send-group', async (req: Request, res: Response) => {
 
 app.post('/api/whatsapp/schedule-group', async (req: Request, res: Response) => {
   try {
-    const { groupId, message, mediaUrl, caption, scheduleAt } = req.body;
+    const { groupId, message, mediaUrl, caption, scheduleAt, scheduleType = 'once' } = req.body;
 
     if (!groupId || !message || !scheduleAt) {
       return res.status(400).json({ success: false, error: 'Group ID, message, and schedule time are required' });
@@ -203,30 +204,199 @@ app.post('/api/whatsapp/schedule-group', async (req: Request, res: Response) => 
     }
 
     const now = new Date();
-    if (scheduleTime <= now) {
+    if (scheduleTime <= now && scheduleType === 'once') {
       return res.status(400).json({ success: false, error: 'Schedule time must be in the future' });
     }
 
-    const delayMs = scheduleTime.getTime() - now.getTime();
+    let groupName = groupId;
+    try {
+      const groups = await whatsAppService.getGroups();
+      const found = groups.find(g => g.id === groupId);
+      if (found) groupName = found.name;
+    } catch {
+      // ignore fetch error, use groupId as fallback
+    }
+
+    let cronExpression: string | undefined;
+    if (scheduleType === 'daily') {
+      const hour = scheduleTime.getHours();
+      const minute = scheduleTime.getMinutes();
+      cronExpression = `${minute} ${hour} * * *`;
+    } else if (scheduleType === 'weekly') {
+      const day = scheduleTime.getDay();
+      const hour = scheduleTime.getHours();
+      const minute = scheduleTime.getMinutes();
+      cronExpression = `${minute} ${hour} * * ${day}`;
+    }
+
     const taskId = `${groupId}-${Date.now()}`;
+    const saved = database.createGroupSchedule({
+      taskId,
+      groupId,
+      groupName,
+      message,
+      mediaUrl: mediaUrl || undefined,
+      caption: caption || undefined,
+      scheduleType: scheduleType === 'weekly' ? 'weekly' : scheduleType === 'daily' ? 'daily' : 'once',
+      scheduleAt: scheduleTime.toISOString(),
+      cronExpression,
+      status: 'upcoming',
+    });
 
-    const timeout = setTimeout(async () => {
+    const runSend = async (schedule: GroupSchedule) => {
       try {
-        await whatsAppService.sendGroupMessage(groupId, message, mediaUrl, caption);
-        logger.info({ groupId, scheduleAt }, 'Scheduled group message sent');
+        await whatsAppService.sendGroupMessage(schedule.groupId, schedule.message, schedule.mediaUrl, schedule.caption);
+        database.updateGroupSchedule(schedule.id!, { status: 'completed', sentAt: new Date().toISOString() });
+        logger.info({ groupId: schedule.groupId, scheduleId: schedule.id }, 'Scheduled group message sent');
       } catch (error) {
-        logger.error({ error, groupId }, 'Failed to send scheduled group message');
+        logger.error({ error, groupId: schedule.groupId, scheduleId: schedule.id }, 'Failed to send scheduled group message');
       } finally {
-        scheduledGroupTasks.delete(taskId);
+        const entry = scheduledGroupTasks.get(schedule.taskId);
+        if (entry?.timeout) clearTimeout(entry.timeout);
+        if (entry?.cron) entry.cron.stop();
+        scheduledGroupTasks.delete(schedule.taskId);
       }
-    }, delayMs);
+    };
 
-    scheduledGroupTasks.set(taskId, timeout);
-    logger.info({ groupId, scheduleAt, taskId }, 'Group message scheduled');
+    if (scheduleType === 'once') {
+      const delayMs = scheduleTime.getTime() - now.getTime();
+      const timeout = setTimeout(() => runSend(saved), delayMs);
+      scheduledGroupTasks.set(taskId, { timeout });
+    } else if (cronExpression && (scheduleType === 'daily' || scheduleType === 'weekly')) {
+      const task = cron.schedule(cronExpression, () => runSend(saved));
+      scheduledGroupTasks.set(taskId, { cron: task });
+    }
 
-    res.json({ success: true, message: 'Group message scheduled', data: { taskId, groupId, scheduleAt } });
+    logger.info({ groupId, scheduleAt, taskId, scheduleType }, 'Group message scheduled');
+
+    res.json({ success: true, message: 'Group message scheduled', data: saved });
   } catch (error) {
     res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to schedule group message' });
+  }
+});
+
+app.get('/api/group-schedules', (req: Request, res: Response) => {
+  try {
+    const { status, scheduleType } = req.query;
+    const schedules = database.getGroupSchedules({
+      status: status ? String(status) : undefined,
+      scheduleType: scheduleType ? String(scheduleType) : undefined,
+    });
+    res.json({ success: true, data: schedules });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to fetch group schedules' });
+  }
+});
+
+app.get('/api/group-schedules/:id', (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const schedule = database.getGroupSchedule(id);
+    if (!schedule) {
+      return res.status(404).json({ success: false, error: 'Group schedule not found' });
+    }
+    res.json({ success: true, data: schedule });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to fetch group schedule' });
+  }
+});
+
+app.put('/api/group-schedules/:id', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const schedule = database.getGroupSchedule(id);
+    if (!schedule) {
+      return res.status(404).json({ success: false, error: 'Group schedule not found' });
+    }
+
+    const { message, mediaUrl, caption, scheduleAt, scheduleType } = req.body;
+
+    if (schedule.status !== 'upcoming') {
+      return res.status(400).json({ success: false, error: 'Only upcoming schedules can be edited' });
+    }
+
+    const entry = scheduledGroupTasks.get(schedule.taskId);
+    if (entry?.timeout) clearTimeout(entry.timeout);
+    if (entry?.cron) entry.cron.stop();
+    scheduledGroupTasks.delete(schedule.taskId);
+
+    const updates: Partial<GroupSchedule> = {};
+    if (message !== undefined) updates.message = message;
+    if (mediaUrl !== undefined) updates.mediaUrl = mediaUrl;
+    if (caption !== undefined) updates.caption = caption;
+    if (scheduleAt !== undefined) {
+      const newTime = new Date(scheduleAt);
+      if (isNaN(newTime.getTime())) {
+        return res.status(400).json({ success: false, error: 'Invalid schedule time format' });
+      }
+      updates.scheduleAt = newTime.toISOString();
+      if (scheduleType === 'daily') {
+        updates.cronExpression = `${newTime.getMinutes()} ${newTime.getHours()} * * *`;
+      } else if (scheduleType === 'weekly') {
+        updates.cronExpression = `${newTime.getMinutes()} ${newTime.getHours()} * * ${newTime.getDay()}`;
+      } else {
+        updates.cronExpression = undefined;
+      }
+      updates.scheduleType = scheduleType || schedule.scheduleType;
+    }
+    if (scheduleType !== undefined) updates.scheduleType = scheduleType;
+
+    database.updateGroupSchedule(id, updates);
+    const updated = database.getGroupSchedule(id)!;
+
+    const runSend = async (s: GroupSchedule) => {
+      try {
+        await whatsAppService.sendGroupMessage(s.groupId, s.message, s.mediaUrl, s.caption);
+        database.updateGroupSchedule(s.id!, { status: 'completed', sentAt: new Date().toISOString() });
+        logger.info({ groupId: s.groupId, scheduleId: s.id }, 'Scheduled group message sent');
+      } catch (error) {
+        logger.error({ error, groupId: s.groupId, scheduleId: s.id }, 'Failed to send scheduled group message');
+      } finally {
+        const e = scheduledGroupTasks.get(s.taskId);
+        if (e?.timeout) clearTimeout(e.timeout);
+        if (e?.cron) e.cron.stop();
+        scheduledGroupTasks.delete(s.taskId);
+      }
+    };
+
+    const now = new Date();
+    const targetTime = new Date(updated.scheduleAt);
+    if (updated.scheduleType === 'once') {
+      const delayMs = targetTime.getTime() - now.getTime();
+      if (delayMs > 0) {
+        const timeout = setTimeout(() => runSend(updated), delayMs);
+        scheduledGroupTasks.set(updated.taskId, { timeout });
+      }
+    } else if (updated.cronExpression) {
+      const task = cron.schedule(updated.cronExpression, () => runSend(updated));
+      scheduledGroupTasks.set(updated.taskId, { cron: task });
+    }
+
+    logger.info({ scheduleId: id }, 'Group schedule updated');
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to update group schedule' });
+  }
+});
+
+app.delete('/api/group-schedules/:id', (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const schedule = database.getGroupSchedule(id);
+    if (!schedule) {
+      return res.status(404).json({ success: false, error: 'Group schedule not found' });
+    }
+
+    const entry = scheduledGroupTasks.get(schedule.taskId);
+    if (entry?.timeout) clearTimeout(entry.timeout);
+    if (entry?.cron) entry.cron.stop();
+    scheduledGroupTasks.delete(schedule.taskId);
+
+    database.updateGroupSchedule(id, { status: 'cancelled' });
+    logger.info({ scheduleId: id }, 'Group schedule cancelled');
+    res.json({ success: true, message: 'Group schedule cancelled' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to cancel group schedule' });
   }
 });
 
